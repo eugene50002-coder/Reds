@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nano Banana Image Editor</title>
+    <!-- Include Cropper.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <style>
+        body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    max-width: 800px;
+    width: 90%;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 5px;
+}
+
+.banana {
+    color: #f1c40f; /* Banana Yellow */
+}
+
+.editor-area {
+    margin-top: 30px;
+}
+
+.img-container {
+    max-width: 100%;
+    height: 400px;
+    margin-bottom: 20px;
+    border: 2px dashed #ddd;
+    border-radius: 10px;
+    overflow: hidden; /* Important for Cropper.js */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#image-to-edit {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Hide the default file input */
+#upload-input {
+    display: none;
+}
+
+.button {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    text-decoration: none; /* For the label-as-button */
+}
+
+.button:hover {
+    background-color: #555;
+}
+
+.button:active {
+    transform: scale(0.98);
+}
+
+/* Specific style for the crop button */
+#crop-button {
+    background-color: #f1c40f; /* Banana Yellow */
+    color: #333;
+    font-weight: bold;
+}
+
+#crop-button:hover {
+    background-color: #f39c12; /* Darker Yellow */
+}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Nano <span class="banana">Banana</span> Editor</h1>
+        <p>Your simple, powerful image editing tool.</p>
+    </header>
+
+    <div class="editor-area">
+        <div class="img-container">
+            <img id="image-to-edit" src="" alt="Upload an image to start editing">
+        </div>
+        <div class="controls">
+            <input type="file" id="upload-input" accept="image/*">
+            <label for="upload-input" class="button">Upload Image</label>
+            
+            <button class="button" id="zoom-in">Zoom In</button>
+            <button class="button" id="zoom-out">Zoom Out</button>
+            <button class="button" id="rotate-left">Rotate Left</button>
+            <button class="button" id="rotate-right">Rotate Right</button>
+            <button class="button" id="crop-button">Crop & Download</button>
+        </div>
+    </div>
+</div>
+
+<!-- Include Cropper.js JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadInput = document.getElementById('upload-input');
+    const imageToEdit = document.getElementById('image-to-edit');
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
+    const rotateLeftBtn = document.getElementById('rotate-left');
+    const rotateRightBtn = document.getElementById('rotate-right');
+    const cropBtn = document.getElementById('crop-button');
+
+    let cropper; // Variable to hold the Cropper instance
+
+    // 1. Handle Image Upload
+    uploadInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                // Set the image source
+                imageToEdit.src = event.target.result;
+
+                // Destroy the previous cropper instance if it exists
+                if (cropper) {
+                    cropper.destroy();
+                }
+
+                // Initialize Cropper.js
+                cropper = new Cropper(imageToEdit, {
+                    aspectRatio: NaN, // Freeform cropping. Set to 1 for square, etc.
+                    viewMode: 1, // Restricts the crop box within the canvas
+                    autoCropArea: 0.8, // Initial crop box size
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 2. Add Editing Controls (if cropper is initialized)
+    
+    zoomInBtn.addEventListener('click', () => {
+        if (cropper) cropper.zoom(0.1);
+    });
+
+    zoomOutBtn.addEventListener('click', () => {
+        if (cropper) cropper.zoom(-0.1);
+    });
+
+    rotateLeftBtn.addEventListener('click', () => {
+        if (cropper) cropper.rotate(-90);
+    });
+
+    rotateRightBtn.addEventListener('click', () => {
+        if (cropper) cropper.rotate(90);
+    });
+
+    // 3. Handle Cropping and Downloading
+    cropBtn.addEventListener('click', () => {
+        if (cropper) {
+            // Get the cropped canvas
+            const canvas = cropper.getCroppedCanvas({
+                // You can specify dimensions here if needed
+                // width: 800,
+                // height: 600,
+            });
+
+            // Convert canvas to a data URL (base64 image)
+            const croppedImageURL = canvas.toDataURL('image/png');
+
+            // Create a temporary link to download the image
+            const downloadLink = document.createElement('a');
+            downloadLink.href = croppedImageURL;
+            downloadLink.download = 'nano-banana-cropped.png'; // Set the default filename
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        } else {
+            alert('Please upload an image first!');
+        }
+    });
+});
+</script>
+
+</body>
+</html>
